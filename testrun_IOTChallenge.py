@@ -49,20 +49,20 @@ if show6:
 # ETA algo. for one random bus
 for bus in feed_trip_update.entity:
     # can replace this with any bus route_id, just need to change stopID to an actual stop_id for that bus
-    if bus.trip_update.trip.route_id == '211':
+    if bus.trip_update.trip.route_id == '213':
         for stop in bus.trip_update.stop_time_update:
-            stopID = "58479"
+            stopID = "55788"
             if stop.stop_id == stopID:
-                print("Bus 211 is here")
+                #print("Bus 211 is here")
                 print("{} stop found".format(stopID))
                 expectedArrival = stop.arrival.time
                 print("Expected arrival in unix time: {}".format(expectedArrival))
                 currentTime = int(time.time())
                 seconds = expectedArrival - currentTime
-                minutes = seconds/60 + (seconds - (seconds/60)*60)%60
+                minutes = seconds/60 
                 print("ETA: {} seconds".format(seconds))
                 print("ETA: {} minutes".format(minutes))
+                print("----------------------")
 
-print("length of trip_update list: {}".format(len(feed_trip_update.entity)))
-print("length of vehicle_position list: {}".format(len(feed_vehicle_position.entity)))
+    
 
