@@ -2,6 +2,7 @@ import requests
 from google.transit import gtfs_realtime_pb2
 import time
 from datetime import datetime
+import math
 
 feed_trip_update = gtfs_realtime_pb2.FeedMessage()
 feed_vehicle_position = gtfs_realtime_pb2.FeedMessage()
@@ -19,9 +20,9 @@ response_vehicle_Positions = requests.request("POST", url_vehicle_position, head
 feed_trip_update.ParseFromString(response_trip_update.content)
 feed_vehicle_position.ParseFromString(response_vehicle_Positions.content)
 
-show1 = False  # entire vehicle_position list
+show1 = False # entire vehicle_position list
 show2 = False  # entire trip_update list
-show3 = False  # first entry in vehicle_position
+show3 = False # first entry in vehicle_position
 show4 = False  # first entry in trip_update
 show5 = False  # all route_ids in vehicle positions
 show6 = False  # all route_ids in trip updates
@@ -59,7 +60,7 @@ for bus in feed_trip_update.entity:
                 if tempTime < lowest_wait_times[0]:
                     lowest_wait_times[0] = tempTime
                     
-    if bus.trip_update.trip.route_id == '177':
+    """if bus.trip_update.trip.route_id == '177':
         for stop in bus.trip_update.stop_time_update:
             if stop.stop_id == "55871" and int(stop.arrival.time) > 0:
                 tempTime = stop.arrival.time
@@ -71,7 +72,7 @@ for bus in feed_trip_update.entity:
             if stop.stop_id == "52610" and int(stop.arrival.time) > 0:
                 tempTime = stop.arrival.time
                 if tempTime < lowest_wait_times[2]:
-                    lowest_wait_times[2] = tempTime 
+                    lowest_wait_times[2] = tempTime """
 
 
 expectedArrival = lowest_wait_times[0] #change index for specific bus
@@ -81,7 +82,21 @@ minutes = seconds/60
 expectedArrival = datetime.utcfromtimestamp(expectedArrival).strftime('%Y-%m-%d %H:%M:%S')
 print("Expected arrival for bus 70 in UTC: {}".format(expectedArrival))
 print("ETA: {} seconds".format(seconds))
-print("ETA: {:.1f} minutes".format(minutes))
+print("ETA: {:.1f} minutes".format(minutes)) 
 
+# Locations algo
+actual_shortest_distance = 1
+busIndex = 0
+for bus in feed_vehicle_position.entity:
+    count = 0
+    if bus.vehicle.trip.route_id == "70" and int(bus.vehicle.current_stop_sequence) < 15:
+        temp_shortest_distance = math.sqrt((45.491631 - bus.vehicle.position.latitude) ** 2 + (-73.727036 - bus.vehicle.position.longitude) ** 2)
+        if temp_shortest_distance<actual_shortest_distance:
+            actual_shortest_distance = temp_shortest_distance
+            busIndex = count
+    count=count+1
+        
+print("Bus number 70 is at x-coord: {}".format(feed_vehicle_position.entity[busIndex].vehicle.position.latitude))
+print("Bus number 70 is at y-coord: {}".format(feed_vehicle_position.entity[busIndex].vehicle.position.longitude))
 
-
+#stop_sequence_for_177 is 7
