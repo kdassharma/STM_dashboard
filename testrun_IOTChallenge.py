@@ -1,6 +1,7 @@
 import requests
 from google.transit import gtfs_realtime_pb2
 import time
+from datetime import datetime
 
 feed_trip_update = gtfs_realtime_pb2.FeedMessage()
 feed_vehicle_position = gtfs_realtime_pb2.FeedMessage()
@@ -46,23 +47,41 @@ if show6:
         print(bus.trip_update.trip.route_id)
 
 
-# ETA algo. for one random bus
+lowest_wait_times = [2147483647, 2147483647, 2147483647]
+
+
+# ETA algo. 
 for bus in feed_trip_update.entity:
-    # can replace this with any bus route_id, just need to change stopID to an actual stop_id for that bus
+    if bus.trip_update.trip.route_id == '70':
+        for stop in bus.trip_update.stop_time_update:
+            if stop.stop_id == "55788" and int(stop.arrival.time) > 0:
+                tempTime = stop.arrival.time
+                if tempTime < lowest_wait_times[0]:
+                    lowest_wait_times[0] = tempTime
+                    
+    if bus.trip_update.trip.route_id == '177':
+        for stop in bus.trip_update.stop_time_update:
+            if stop.stop_id == "55871" and int(stop.arrival.time) > 0:
+                tempTime = stop.arrival.time
+                if tempTime < lowest_wait_times[1]:
+                    lowest_wait_times[1] = tempTime
+
     if bus.trip_update.trip.route_id == '213':
         for stop in bus.trip_update.stop_time_update:
-            stopID = "55788"
-            if stop.stop_id == stopID:
-                #print("Bus 211 is here")
-                print("{} stop found".format(stopID))
-                expectedArrival = stop.arrival.time
-                print("Expected arrival in unix time: {}".format(expectedArrival))
-                currentTime = int(time.time())
-                seconds = expectedArrival - currentTime
-                minutes = seconds/60 
-                print("ETA: {} seconds".format(seconds))
-                print("ETA: {} minutes".format(minutes))
-                print("----------------------")
+            if stop.stop_id == "52610" and int(stop.arrival.time) > 0:
+                tempTime = stop.arrival.time
+                if tempTime < lowest_wait_times[2]:
+                    lowest_wait_times[2] = tempTime 
 
-    
+
+expectedArrival = lowest_wait_times[0] #change index for specific bus
+currentTime = int(time.time())
+seconds = expectedArrival - currentTime
+minutes = seconds/60
+expectedArrival = datetime.utcfromtimestamp(expectedArrival).strftime('%Y-%m-%d %H:%M:%S')
+print("Expected arrival for bus 70 in UTC: {}".format(expectedArrival))
+print("ETA: {} seconds".format(seconds))
+print("ETA: {:.1f} minutes".format(minutes))
+
+
 
