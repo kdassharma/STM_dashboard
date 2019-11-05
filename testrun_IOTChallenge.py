@@ -56,39 +56,59 @@ if show6:
 def estimated_time_of_arrival_and_location(busNumber, stopID):
     lowest_wait_time = 2147483647 # Will have to fix in year 2038 
     lowest_trip_ID = "" 
-    
+    currentTime = int(time.time())
+    stop_sequence = 0
     # Goes through all bus' stop information and finds the one which goes to requested stopID, and finds the lowest wait time from all of these. 
     for bus in feed_trip_update.entity:
         if bus.trip_update.trip.route_id == str(busNumber):
             for stop in bus.trip_update.stop_time_update:
                 if stop.stop_id == str(stopID):
                     tempTime = int(stop.departure.time)
-                    if tempTime < lowest_wait_time and tempTime - int(time.time()) > 0:
+                    if tempTime < lowest_wait_time and tempTime - currentTime > 0:
+                        stop_sequence = int(stop.stop_sequence) # Stores the stop sequence corresponding to the bus stop entered for later comparision
                         lowest_wait_time = tempTime
                         lowest_trip_ID = str(bus.trip_update.trip.trip_id) # Stores the trip ID of that specific bus with the lowest wait time
-                
+    
+    if lowest_wait_time == 2147483647: # This is if a bus is not active, it quits out of the function
+        return
+    
     print("Expected arrival in unix time is: {}".format(lowest_wait_time))
     expectedArrival = lowest_wait_time 
-    currentTime = int(time.time()) 
     seconds = expectedArrival - currentTime
     minutes = seconds/60
     expectedArrival = datetime.utcfromtimestamp(expectedArrival).strftime('%Y-%m-%d %H:%M:%S') # Needs to be changed into local time
     print("Expected arrival for bus {} in UTC: {}".format(busNumber,expectedArrival))
     print("ETA: {} seconds".format(seconds))
     print("ETA: {:.1f} minutes".format(minutes))
-
+    
+    tripFound = False
     busIndex = 0
     count = 0
     for bus in feed_vehicle_position.entity:
 
         if bus.vehicle.trip.trip_id == lowest_trip_ID:
-            print("Trip ID is Valid")
-            busIndex = count    
+            print("Trip ID was found")
+            busIndex = count   
+            tripFound = True 
             break
         count=count+1 
-            
-    print("Bus number {} is at x-coord: {}".format(busNumber,feed_vehicle_position.entity[busIndex].vehicle.position.latitude))
-    print("Bus number {} is at y-coord: {}".format(busNumber,feed_vehicle_position.entity[busIndex].vehicle.position.longitude))
+    
+    if tripFound:
+        print("Bus number {} is at x-coord: {}".format(busNumber,feed_vehicle_position.entity[busIndex].vehicle.position.latitude))
+        print("Bus number {} is at y-coord: {}".format(busNumber,feed_vehicle_position.entity[busIndex].vehicle.position.longitude))
+    else:
+        actual_shortest_distance_between_stops = 100
+        busIndex = 0
+        count = 0
+        for bus in feed_vehicle_position.entity:
+            if bus.vehicle.trip.route_id == str(busNumber):
+                temp_shortest_distance_between_stops = stop_sequence - int(bus.vehicle.current_stop_sequence)
+                if temp_shortest_distance_between_stops >= 0 and temp_shortest_distance_between_stops<actual_shortest_distance_between_stops:
+                    actual_shortest_distance_between_stops = temp_shortest_distance_between_stops
+                    busIndex = count
+            count=count+1
+        print("Bus number {} is at x-coord: {}".format(busNumber,feed_vehicle_position.entity[busIndex].vehicle.position.latitude))
+        print("Bus number {} is at y-coord: {}".format(busNumber,feed_vehicle_position.entity[busIndex].vehicle.position.longitude))
 
 # TESTS:    
 estimated_time_of_arrival_and_location("70","55959")
@@ -96,3 +116,4 @@ print("--------------------------------------------")
 estimated_time_of_arrival_and_location("213","55959")
 print("--------------------------------------------")
 estimated_time_of_arrival_and_location("177","55871")
+
