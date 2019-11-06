@@ -7,11 +7,21 @@ import sys
 
 
 class incomingBus:
-    def __init__(self, bus, stopId, departureTime, busNumber):
+    def __init__(self, bus, stopId, departureTime, busNumber, tripId):
         self.bus = bus
         self.stopId = stopId
         self.departureTime = departureTime
         self.busNumber = busNumber
+        self.tripId = tripId
+        # self.utcETA = datetime.utcfromtimestamp(self.departureTime).strftime('%Y-%m-%d %H:%M:%S')
+        self.utcETA = (self.departureTime - int(time.time()))/60
+        self.coordinates = self.extractCoordinates()
+
+    def extractCoordinates(self):
+        for bus in feed_vehicle_position.entity:
+            if self.tripId == bus.vehicle.trip.trip_id or str(int(bus.vehicle.trip.trip_id) - 1):
+                return [bus.vehicle.position.latitude, bus.vehicle.position.longitude]
+
 
 
 # Calling the STM API to request for bus location information and bus stop location
@@ -67,10 +77,10 @@ incomingBuses = []
 
 
 def extractEarliestBuses():
-    lowest_wait_time = 99999999999999999999999999999
+    lowest_wait_time = 2147483647
     earliestBuses = {}
     for bus in relevantBuses:
-        earliestBuses.update({bus: incomingBus(None, None, lowest_wait_time, None)})
+        earliestBuses.update({bus: incomingBus(None, None, lowest_wait_time, None, None)})
     for bus in incomingBuses:
         if int(bus.departureTime) < earliestBuses[bus.busNumber].departureTime:
             earliestBuses[bus.busNumber] = bus
@@ -90,9 +100,9 @@ def estimated_time_of_arrival_and_location():
         for busNumber in (busNumber for busNumber in relevantBusesWithStops if bus.trip_update.trip.route_id == busNumber):
             for stop in bus.trip_update.stop_time_update:
                 if stop.stop_id == relevantBusesWithStops[busNumber]:
-                    print(stop.stop_id)
-                    # creating list of incomingBuses to process later
-                    incomingBuses.append(incomingBus(bus, stop.stop_id, stop.departure.time, busNumber))
+                    # checking if the bus has yet to come to Ericsson
+                    if int(time.time()) - int(stop.departure.time) <= 0:
+                        incomingBuses.append(incomingBus(bus, stop.stop_id, stop.departure.time, busNumber, bus.trip_update.trip.trip_id))
                     # stop.departure.time
 
     # print("Expected arrival in unix time is: {}".format(lowest_wait_time))
@@ -120,4 +130,8 @@ def estimated_time_of_arrival_and_location():
     # print("Bus number 70 is at y-coord: {}".format(feed_vehicle_position.entity[busIndex].vehicle.position.longitude))
 
 estimated_time_of_arrival_and_location()
-extractEarliestBuses()
+
+earliestBuses = extractEarliestBuses()
+
+print()
+
