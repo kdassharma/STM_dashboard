@@ -24,9 +24,7 @@ class incomingBus:
                 return [bus.vehicle.position.latitude, bus.vehicle.position.longitude]
 
 
-
 # Calling the STM API to request for bus location information and bus stop location
-
 feed_trip_update = gtfs_realtime_pb2.FeedMessage()
 feed_vehicle_position = gtfs_realtime_pb2.FeedMessage()
 url_trip_updates = "https://api.stm.info/pub/od/gtfs-rt/ic/v1/tripUpdates"
@@ -54,7 +52,7 @@ def markEarliestBuses():
     # creating a dictionary which contains {busNumber: earliest time for that bus number}
     for busNum in relevantBuses:
         earliestBuses.update({busNum: incomingBus(None, None, lowest_wait_time, None, None)})
-    # the earliest bus objects will be put in dictionary of from {busNum: earliest bus object}
+    # the earliest bus objects will be put in dictionary of form {busNum: earliest bus object}
     for bus in incomingBuses:
         if int(bus.departureTime) < earliestBuses[bus.busNumber].departureTime:
             earliestBuses[bus.busNumber] = bus
@@ -64,21 +62,22 @@ def markEarliestBuses():
     # return earliestBuses for possible debugging
     return earliestBuses
 
-# 70 -> 55788, 177 -> 55871, 213 -> 55959
-def estimated_time_of_arrival_and_location():
 
+def estimated_time_of_arrival_and_location():
+    # 70 -> 55788, 177 -> 55871, 213 -> 55959
     global incomingBuses
     incomingBuses = []
 
-    # Goes through all bus' stop information and finds the one which goes to requested stopID, and finds the lowest wait time from all of these.
+    # Goes through all bus' stop information and finds the buses which go to requested stopID, and have yet to reach it.
     for bus in feed_trip_update.entity:
-        for busNumber in (busNumber for busNumber in relevantBusesWithStops if bus.trip_update.trip.route_id == busNumber):
+        for busNumber in \
+                (busNumber for busNumber in relevantBusesWithStops if bus.trip_update.trip.route_id == busNumber):
             for stop in bus.trip_update.stop_time_update:
                 if stop.stop_id == relevantBusesWithStops[busNumber]:
                     # checking if the bus has yet to come to Ericsson
                     if int(time.time()) - int(stop.departure.time) <= 0:
-                        incomingBuses.append(incomingBus(bus, stop.stop_id, stop.departure.time, busNumber, bus.trip_update.trip.trip_id))
-                    # stop.departure.time
+                        incomingBuses.append(incomingBus(bus, stop.stop_id, stop.departure.time, busNumber,
+                                                         bus.trip_update.trip.trip_id))
 
 
 estimated_time_of_arrival_and_location()
@@ -89,7 +88,3 @@ for bus in incomingBuses:
     print("Bus ETA: " + str(bus.ETA))
     print("isEarliest?: " + str(bus.isEarliest))
     print("=================")
-# using it to set breakpoint
-print()
-
-# boolean attribute: isEarliest
