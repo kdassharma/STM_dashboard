@@ -14,8 +14,9 @@ class incomingBus:
         self.busNumber = busNumber
         self.tripId = tripId
         # self.utcETA = datetime.utcfromtimestamp(self.departureTime).strftime('%Y-%m-%d %H:%M:%S')
-        self.utcETA = (self.departureTime - int(time.time()))/60
+        self.ETA = (self.departureTime - int(time.time())) / 60
         self.coordinates = self.extractCoordinates()
+        self.isEarliest = False
 
     def extractCoordinates(self):
         for bus in feed_vehicle_position.entity:
@@ -42,54 +43,28 @@ response_vehicle_Positions = requests.request("POST", url_vehicle_position, head
 feed_trip_update.ParseFromString(response_trip_update.content)
 feed_vehicle_position.ParseFromString(response_vehicle_Positions.content)
 
-# Change the following to True/False in order to print /or not print
-
-show1 = False  # entire vehicle_position list
-show2 = False  # entire trip_update list
-show3 = False  # first entry in vehicle_position
-show4 = False  # first entry in trip_update
-show5 = False  # all route_ids in vehicle positions
-show6 = False  # all route_ids in trip updates
-
-if show1:
-    print(feed_vehicle_position)
-
-if show2:
-    print(feed_trip_update)
-
-if show3:
-    print(feed_vehicle_position.entity[0])
-
-if show4:
-    print(feed_trip_update.entity[0])
-
-if show5:
-    for bus in feed_vehicle_position.entity:
-        print(bus.vehicle.trip.route_id)
-
-if show6:
-    for bus in feed_trip_update.entity:
-        print(bus.trip_update.trip.route_id)
-
 relevantBuses = {'70': None, '177': None, '213': None}
 relevantBusesWithStops = {'70': '55788', '177': '55871', '213': '55959'}
 incomingBuses = []
 
 
-def extractEarliestBuses():
+def markEarliestBuses():
     lowest_wait_time = 2147483647
     earliestBuses = {}
-    for bus in relevantBuses:
-        earliestBuses.update({bus: incomingBus(None, None, lowest_wait_time, None, None)})
+    # creating a dictionary which contains {busNumber: earliest time for that bus number}
+    for busNum in relevantBuses:
+        earliestBuses.update({busNum: incomingBus(None, None, lowest_wait_time, None, None)})
+    # the earliest bus objects will be put in dictionary of from {busNum: earliest bus object}
     for bus in incomingBuses:
         if int(bus.departureTime) < earliestBuses[bus.busNumber].departureTime:
             earliestBuses[bus.busNumber] = bus
-    # returns a dictionary which contains the earliest bus for each group(213/177/70)
+    # mark all the retained buses as earliest
+    for busNum in earliestBuses:
+        earliestBuses[busNum].isEarliest = True
+    # return earliestBuses for possible debugging
     return earliestBuses
 
 # 70 -> 55788, 177 -> 55871, 213 -> 55959
-# Function which finds the lowest wait time of a given bus at a given bus stop,
-# and then uses the trip_id of that to print its location.
 def estimated_time_of_arrival_and_location():
 
     global incomingBuses
@@ -105,33 +80,16 @@ def estimated_time_of_arrival_and_location():
                         incomingBuses.append(incomingBus(bus, stop.stop_id, stop.departure.time, busNumber, bus.trip_update.trip.trip_id))
                     # stop.departure.time
 
-    # print("Expected arrival in unix time is: {}".format(lowest_wait_time))
-    # expectedArrival = lowest_wait_time
-    # currentTime = int(time.time())
-    # seconds = expectedArrival - currentTime
-    # minutes = seconds / 60
-    # expectedArrival = datetime.utcfromtimestamp(expectedArrival).strftime('%Y-%m-%d %H:%M:%S')  # Needs to be changed into local time
-    # print("Expected arrival for bus {} in UTC: {}".format(busNumber, expectedArrival))
-    # print("ETA: {} seconds".format(seconds))
-    # print("ETA: {:.1f} minutes".format(minutes))
-    #
-    # actual_shortest_distance = 99999999999999999999999999999
-    # busIndex = 0
-    # count = 0
-    #
-    # for bus in feed_vehicle_position.entity:
-    #
-    #     if bus.vehicle.trip.trip_id == lowest_trip_ID:
-    #         print("Trip ID is Valid")
-    #         busIndex = count
-    #     count = count + 1
-    #
-    # print("Bus number 70 is at x-coord: {}".format(feed_vehicle_position.entity[busIndex].vehicle.position.latitude))
-    # print("Bus number 70 is at y-coord: {}".format(feed_vehicle_position.entity[busIndex].vehicle.position.longitude))
 
 estimated_time_of_arrival_and_location()
+earliestBuses = markEarliestBuses()
 
-earliestBuses = extractEarliestBuses()
-
+for bus in incomingBuses:
+    print("Bus Number: " + bus.busNumber)
+    print("Bus ETA: " + str(bus.ETA))
+    print("isEarliest?: " + str(bus.isEarliest))
+    print("=================")
+# using it to set breakpoint
 print()
 
+# boolean attribute: isEarliest
