@@ -64,13 +64,13 @@ def estimated_time_of_arrival_and_location(busNumber, stopID):
             for stop in bus.trip_update.stop_time_update:
                 if stop.stop_id == str(stopID):
                     tempTime = int(stop.departure.time)
-                    if tempTime < lowest_wait_time and tempTime - currentTime > 0:
+                    if tempTime < lowest_wait_time and tempTime - currentTime >= 0:
                         stop_sequence = int(stop.stop_sequence) # Stores the stop sequence corresponding to the bus stop entered for later comparision
                         lowest_wait_time = tempTime
                         lowest_trip_ID = str(bus.trip_update.trip.trip_id) # Stores the trip ID of that specific bus with the lowest wait time
     
     if lowest_wait_time == 2147483647: # This is if a bus is not active, it quits out of the function
-        return
+        return 
     
     print("Expected arrival in unix time is: {}".format(lowest_wait_time))
     expectedArrival = lowest_wait_time 
@@ -94,8 +94,7 @@ def estimated_time_of_arrival_and_location(busNumber, stopID):
         count=count+1 
     
     if tripFound:
-        print("Bus number {} is at x-coord: {}".format(busNumber,feed_vehicle_position.entity[busIndex].vehicle.position.latitude))
-        print("Bus number {} is at y-coord: {}".format(busNumber,feed_vehicle_position.entity[busIndex].vehicle.position.longitude))
+        print("Bus number {} is at (x,y): ({},{})".format(busNumber,feed_vehicle_position.entity[busIndex].vehicle.position.latitude,feed_vehicle_position.entity[busIndex].vehicle.position.longitude))
     else:
         actual_shortest_distance_between_stops = 100
         busIndex = 0
@@ -107,8 +106,7 @@ def estimated_time_of_arrival_and_location(busNumber, stopID):
                     actual_shortest_distance_between_stops = temp_shortest_distance_between_stops
                     busIndex = count
             count=count+1
-        print("Bus number {} is at x-coord: {}".format(busNumber,feed_vehicle_position.entity[busIndex].vehicle.position.latitude))
-        print("Bus number {} is at y-coord: {}".format(busNumber,feed_vehicle_position.entity[busIndex].vehicle.position.longitude))
+        print("Bus number {} is at (x,y): ({},{})".format(busNumber,feed_vehicle_position.entity[busIndex].vehicle.position.latitude,feed_vehicle_position.entity[busIndex].vehicle.position.longitude))
 
 # TESTS:    
 estimated_time_of_arrival_and_location("70","55959")
@@ -116,4 +114,5 @@ print("--------------------------------------------")
 estimated_time_of_arrival_and_location("213","55959")
 print("--------------------------------------------")
 estimated_time_of_arrival_and_location("177","55871")
+
 
