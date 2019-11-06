@@ -5,6 +5,15 @@ from datetime import datetime
 import math
 import sys
 
+
+class incomingBus:
+    def __init__(self, bus, stopId, departureTime, busNumber):
+        self.bus = bus
+        self.stopId = stopId
+        self.departureTime = departureTime
+        self.busNumber = busNumber
+
+
 # Calling the STM API to request for bus location information and bus stop location
 
 feed_trip_update = gtfs_realtime_pb2.FeedMessage()
@@ -52,52 +61,63 @@ if show6:
     for bus in feed_trip_update.entity:
         print(bus.trip_update.trip.route_id)
 
-relevantBuses = {'70': '55788', '177': '55871', '213': '55959'}
+relevantBuses = {'70': None, '177': None, '213': None}
+relevantBusesWithStops = {'70': '55788', '177': '55871', '213': '55959'}
+incomingBuses = []
 
+
+def extractEarliestBuses():
+    lowest_wait_time = 99999999999999999999999999999
+    earliestBuses = {}
+    for bus in relevantBuses:
+        earliestBuses.update({bus: incomingBus(None, None, lowest_wait_time, None)})
+    for bus in incomingBuses:
+        if int(bus.departureTime) < earliestBuses[bus.busNumber].departureTime:
+            earliestBuses[bus.busNumber] = bus
+    # returns a dictionary which contains the earliest bus for each group(213/177/70)
+    return earliestBuses
 
 # 70 -> 55788, 177 -> 55871, 213 -> 55959
 # Function which finds the lowest wait time of a given bus at a given bus stop,
 # and then uses the trip_id of that to print its location.
 def estimated_time_of_arrival_and_location():
-    lowest_wait_time = 99999999999999999999999999999
-    lowest_trip_ID = ""
 
-    # busNumber = str(busNumber)
-    # stopID = str(stopID)
+    global incomingBuses
+    incomingBuses = []
 
     # Goes through all bus' stop information and finds the one which goes to requested stopID, and finds the lowest wait time from all of these.
     for bus in feed_trip_update.entity:
-        for busNumber in (busNumber for busNumber in relevantBuses if bus.trip_update.trip.route_id == busNumber):
+        for busNumber in (busNumber for busNumber in relevantBusesWithStops if bus.trip_update.trip.route_id == busNumber):
             for stop in bus.trip_update.stop_time_update:
-                if stop.stop_id == relevantBuses[busNumber]:
-                    print(stop)
-                    tempTime = stop.departure.time
-                    if tempTime < lowest_wait_time:
-                        lowest_wait_time = tempTime
-                        lowest_trip_ID = bus.trip_update.trip.trip_id  # Stores the trip ID of that specific bus with the lowest wait time
+                if stop.stop_id == relevantBusesWithStops[busNumber]:
+                    print(stop.stop_id)
+                    # creating list of incomingBuses to process later
+                    incomingBuses.append(incomingBus(bus, stop.stop_id, stop.departure.time, busNumber))
+                    # stop.departure.time
 
-    print("Expected arrival in unix time is: {}".format(lowest_wait_time))
-    expectedArrival = lowest_wait_time
-    currentTime = int(time.time())
-    seconds = expectedArrival - currentTime
-    minutes = seconds / 60
-    expectedArrival = datetime.utcfromtimestamp(expectedArrival).strftime('%Y-%m-%d %H:%M:%S')  # Needs to be changed into local time
-    print("Expected arrival for bus {} in UTC: {}".format(busNumber, expectedArrival))
-    print("ETA: {} seconds".format(seconds))
-    print("ETA: {:.1f} minutes".format(minutes))
-
-    actual_shortest_distance = 99999999999999999999999999999
-    busIndex = 0
-    count = 0
-
-    for bus in feed_vehicle_position.entity:
-
-        if bus.vehicle.trip.trip_id == lowest_trip_ID:
-            print("Trip ID is Valid")
-            busIndex = count
-        count = count + 1
-
-    print("Bus number 70 is at x-coord: {}".format(feed_vehicle_position.entity[busIndex].vehicle.position.latitude))
-    print("Bus number 70 is at y-coord: {}".format(feed_vehicle_position.entity[busIndex].vehicle.position.longitude))
+    # print("Expected arrival in unix time is: {}".format(lowest_wait_time))
+    # expectedArrival = lowest_wait_time
+    # currentTime = int(time.time())
+    # seconds = expectedArrival - currentTime
+    # minutes = seconds / 60
+    # expectedArrival = datetime.utcfromtimestamp(expectedArrival).strftime('%Y-%m-%d %H:%M:%S')  # Needs to be changed into local time
+    # print("Expected arrival for bus {} in UTC: {}".format(busNumber, expectedArrival))
+    # print("ETA: {} seconds".format(seconds))
+    # print("ETA: {:.1f} minutes".format(minutes))
+    #
+    # actual_shortest_distance = 99999999999999999999999999999
+    # busIndex = 0
+    # count = 0
+    #
+    # for bus in feed_vehicle_position.entity:
+    #
+    #     if bus.vehicle.trip.trip_id == lowest_trip_ID:
+    #         print("Trip ID is Valid")
+    #         busIndex = count
+    #     count = count + 1
+    #
+    # print("Bus number 70 is at x-coord: {}".format(feed_vehicle_position.entity[busIndex].vehicle.position.latitude))
+    # print("Bus number 70 is at y-coord: {}".format(feed_vehicle_position.entity[busIndex].vehicle.position.longitude))
 
 estimated_time_of_arrival_and_location()
+extractEarliestBuses()
