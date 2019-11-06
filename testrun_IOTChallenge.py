@@ -68,9 +68,9 @@ def estimated_time_of_arrival_and_location():
     # Goes through all bus' stop information and finds the one which goes to requested stopID, and finds the lowest wait time from all of these.
     for bus in feed_trip_update.entity:
         for busNumber in (busNumber for busNumber in relevantBuses if bus.trip_update.trip.route_id == busNumber):
-            print(busNumber)
             for stop in bus.trip_update.stop_time_update:
                 if stop.stop_id == relevantBuses[busNumber]:
+                    print(stop)
                     tempTime = stop.departure.time
                     if tempTime < lowest_wait_time:
                         lowest_wait_time = tempTime
@@ -81,8 +81,7 @@ def estimated_time_of_arrival_and_location():
     currentTime = int(time.time())
     seconds = expectedArrival - currentTime
     minutes = seconds / 60
-    expectedArrival = datetime.utcfromtimestamp(expectedArrival).strftime(
-        '%Y-%m-%d %H:%M:%S')  # Needs to be changed into local time
+    expectedArrival = datetime.utcfromtimestamp(expectedArrival).strftime('%Y-%m-%d %H:%M:%S')  # Needs to be changed into local time
     print("Expected arrival for bus {} in UTC: {}".format(busNumber, expectedArrival))
     print("ETA: {} seconds".format(seconds))
     print("ETA: {:.1f} minutes".format(minutes))
