@@ -1,9 +1,9 @@
 import requests
 from google.transit import gtfs_realtime_pb2
 import time
-from datetime import datetime
-import math
-import sys
+#from datetime import datetime
+#import math
+
 
 
 class incomingBus:
@@ -76,14 +76,19 @@ if __name__ == "__main__":
     feed_vehicle_position.ParseFromString(response_vehicle_Positions.content)
 
     relevantBuses = {'70': None, '177': None, '213': None}
-    relevantBusesWithStops = {'70': '55788', '177': '55871', '213': '55959'}
+    relevantBusesWithStops = {'70': '55959', '177': '55871', '213': '55959'}
     incomingBuses = []
 
     estimated_time_of_arrival_and_location()
     earliestBuses = markEarliestBuses()
 
+    for bus in feed_vehicle_position.entity:
+        if bus.vehicle.trip.trip_id == "204983829":
+            print("{},{}".format(bus.vehicle.position.latitude, bus.vehicle.position.longitude))
+
     for bus in incomingBuses:
         print("Bus Number: " + bus.busNumber)
         print("Bus ETA: " + str(bus.ETA))
         print("isEarliest?: " + str(bus.isEarliest))
+        print("coordinates: {},{}".format(bus.coordinates[0],bus.coordinates[1]))
         print("=================")
