@@ -4,10 +4,13 @@ import time
 #from datetime import datetime
 #import math
 
+relevantBuses = {'70': None, '177': None, '213': None}
+relevantBusesWithStops = {'70': '55959', '177': '55871', '213': '55959'}
+incomingBuses = []
 
 
 class incomingBus:
-    def __init__(self, bus, stopId, departureTime, busNumber, tripId):
+    def __init__(self, vehicle_position, bus, stopId, departureTime, busNumber, tripId):
         self.bus = bus
         self.stopId = stopId
         self.departureTime = departureTime
@@ -15,11 +18,14 @@ class incomingBus:
         self.tripId = tripId
         # self.utcETA = datetime.utcfromtimestamp(self.departureTime).strftime('%Y-%m-%d %H:%M:%S')
         self.ETA = (self.departureTime - int(time.time())) / 60
-        self.coordinates = self.extractCoordinates()
+        if vehicle_position is not None:
+            self.coordinates = self.extractCoordinates(vehicle_position)
+        else:
+            self.coordinates = vehicle_position
         self.isEarliest = False
 
-    def extractCoordinates(self):
-        for bus in feed_vehicle_position.entity:
+    def extractCoordinates(self, vehicle_position):
+        for bus in vehicle_position.entity:
             if self.tripId == bus.vehicle.trip.trip_id or str(int(bus.vehicle.trip.trip_id) - 1):
                 return [bus.vehicle.position.latitude, bus.vehicle.position.longitude]
 
@@ -29,7 +35,7 @@ def markEarliestBuses():
     earliestBuses = {}
     # creating a dictionary which contains {busNumber: earliest time for that bus number}
     for busNum in relevantBuses:
-        earliestBuses.update({busNum: incomingBus(None, None, lowest_wait_time, None, None)})
+        earliestBuses.update({busNum: incomingBus(None, None, None, lowest_wait_time, None, None)})
     # the earliest bus objects will be put in dictionary of form {busNum: earliest bus object}
     for bus in incomingBuses:
         if int(bus.departureTime) < earliestBuses[bus.busNumber].departureTime:
@@ -41,23 +47,25 @@ def markEarliestBuses():
     return earliestBuses
 
 
-def estimated_time_of_arrival_and_location():
+def estimated_time_of_arrival_and_location(trip_update, vehicle_position):
     # 70 -> 55788, 177 -> 55871, 213 -> 55959
     global incomingBuses
     incomingBuses = []
 
     # Goes through all bus' stop information and finds the buses which go to requested stopID, and have yet to reach it.
-    for bus in feed_trip_update.entity:
+    for bus in trip_update.entity:
         for busNumber in \
                 (busNumber for busNumber in relevantBusesWithStops if bus.trip_update.trip.route_id == busNumber):
             for stop in bus.trip_update.stop_time_update:
                 if stop.stop_id == relevantBusesWithStops[busNumber]:
                     # checking if the bus has yet to come to Ericsson
                     if int(time.time()) - int(stop.departure.time) <= 0:
-                        incomingBuses.append(incomingBus(bus, stop.stop_id, stop.departure.time, busNumber,
+                        incomingBuses.append(incomingBus(vehicle_position, bus, stop.stop_id, stop.departure.time, busNumber,
                                                          bus.trip_update.trip.trip_id))
 
-if __name__ == "__main__":
+
+def getIncomingBuses():
+    global incomingBuses
     # Calling the STM API to request for bus location information and bus stop location
     feed_trip_update = gtfs_realtime_pb2.FeedMessage()
     feed_vehicle_position = gtfs_realtime_pb2.FeedMessage()
@@ -75,11 +83,7 @@ if __name__ == "__main__":
     feed_trip_update.ParseFromString(response_trip_update.content)
     feed_vehicle_position.ParseFromString(response_vehicle_Positions.content)
 
-    relevantBuses = {'70': None, '177': None, '213': None}
-    relevantBusesWithStops = {'70': '55959', '177': '55871', '213': '55959'}
-    incomingBuses = []
-
-    estimated_time_of_arrival_and_location()
+    estimated_time_of_arrival_and_location(feed_trip_update, feed_vehicle_position)
     earliestBuses = markEarliestBuses()
 
     for bus in feed_vehicle_position.entity:
@@ -90,5 +94,10 @@ if __name__ == "__main__":
         print("Bus Number: " + bus.busNumber)
         print("Bus ETA: " + str(bus.ETA))
         print("isEarliest?: " + str(bus.isEarliest))
-        print("coordinates: {},{}".format(bus.coordinates[0],bus.coordinates[1]))
+        print("coordinates: {},{}".format(bus.coordinates[0], bus.coordinates[1]))
         print("=================")
+
+    # think about sorting the buses, both in therms of ID and ETA
+
+    return incomingBuses
+

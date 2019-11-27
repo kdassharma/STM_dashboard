@@ -1,27 +1,50 @@
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
-from testrun_IOTChallenge import *
+import testrun_IOTChallenge as test
 
 app = Flask(__name__)
 api = Api(app)
 
-buses = incomingBuses
+buses = []
 
 
-class Bus(Resource):
-    def get(self, number):
-        for obj in buses:
-            if number == obj.busNumber:
-                return bus, 200
-        return "User not found", 404
+class STMBuses(Resource):
+
+    def get(self, busId):
+        try:
+            return buses[busId], 200
+        except KeyError:
+            return "Bus not found", 404
+
+    def put(self):
+        global buses
+        if len(buses) == 0:
+            returnCode = 201
+        else:
+            returnCode = 200
+        buses = test.getEarliestBuses()
+        return buses, returnCode
 
     #def post(self, name):
-
-    #def put(self, name):
 
     #def delete(self, name):
 
 
-api.add_resource(Bus, "/bus/<string:name>")
+displayBuses = STMBuses()
+
+
+@app.route('/bus/display')
+def display():
+    return displayBuses.put()
+
+
+api.add_resource(STMBuses, "/bus/<string:busId>")
 
 app.run(debug=True)
+
+# # can put back later
+# def get(self, number):
+#     for obj in buses:
+#         if number == obj.busNumber:
+#             return bus, 200
+#     return "User not found", 404
