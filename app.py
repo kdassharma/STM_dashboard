@@ -22,7 +22,7 @@ class STMBuses(Resource):
             returnCode = 201
         else:
             returnCode = 200
-        buses = test.getEarliestBuses()
+        buses = test.getIncomingBuses()
         return buses, returnCode
 
     #def post(self, name):
