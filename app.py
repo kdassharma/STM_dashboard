@@ -1,3 +1,5 @@
+import json
+
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
 import testrun_IOTChallenge as test
@@ -22,12 +24,8 @@ class STMBuses(Resource):
             returnCode = 201
         else:
             returnCode = 200
-        buses = test.getEarliestBuses()
-        return buses, returnCode
-
-    #def post(self, name):
-
-    #def delete(self, name):
+        buses = test.getIncomingBuses()
+        return {"incomingBuses": buses}, returnCode
 
 
 displayBuses = STMBuses()

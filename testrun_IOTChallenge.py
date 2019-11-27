@@ -1,3 +1,5 @@
+import json
+
 import requests
 from google.transit import gtfs_realtime_pb2
 import time
@@ -10,8 +12,7 @@ incomingBuses = []
 
 
 class incomingBus:
-    def __init__(self, vehicle_position, bus, stopId, departureTime, busNumber, tripId):
-        self.bus = bus
+    def __init__(self, vehicle_position, stopId, departureTime, busNumber, tripId):
         self.stopId = stopId
         self.departureTime = departureTime
         self.busNumber = busNumber
@@ -22,7 +23,9 @@ class incomingBus:
             self.coordinates = self.extractCoordinates(vehicle_position)
         else:
             self.coordinates = vehicle_position
-        self.isEarliest = False
+
+    def getJsonSerialisableBus(self):
+        return json.dumps(self.__dict__, indent=2)
 
     def extractCoordinates(self, vehicle_position):
         for bus in vehicle_position.entity:
@@ -30,21 +33,35 @@ class incomingBus:
                 return [bus.vehicle.position.latitude, bus.vehicle.position.longitude]
 
 
-def markEarliestBuses():
+def sortIncomingBuses():
+    # sorts all buses based on their IDs and ETAs
     lowest_wait_time = 2147483647
-    earliestBuses = {}
-    # creating a dictionary which contains {busNumber: earliest time for that bus number}
-    for busNum in relevantBuses:
-        earliestBuses.update({busNum: incomingBus(None, None, None, lowest_wait_time, None, None)})
-    # the earliest bus objects will be put in dictionary of form {busNum: earliest bus object}
+    # organising buses by ID
+    sortedBuses = {}
     for bus in incomingBuses:
-        if int(bus.departureTime) < earliestBuses[bus.busNumber].departureTime:
-            earliestBuses[bus.busNumber] = bus
-    # mark all the retained buses as earliest
-    for busNum in earliestBuses:
-        earliestBuses[busNum].isEarliest = True
-    # return earliestBuses for possible debugging
-    return earliestBuses
+        if bus.busNumber in sortedBuses.keys():
+            for index, insertedBus in enumerate(sortedBuses[bus.busNumber]):
+                if bus.ETA < insertedBus.ETA:
+                    sortedBuses[bus.busNumber].insert(index, bus)
+                    break
+                elif index == len(sortedBuses[bus.busNumber]) - 1:
+                    sortedBuses[bus.busNumber].append(bus)
+                    break
+            # the loop will never exit if you don't break, as inserting increases the length of the list
+        else:
+            sortedBuses.update({bus.busNumber: [bus]})
+    # # creating a dictionary which contains {busNumber: earliest time for that bus number}
+    # for busNum in relevantBuses:
+    #     sortedBuses.update({busNum: incomingBus(None, None, lowest_wait_time, None, None)})
+    # # the earliest bus objects will be put in dictionary of form {busNum: earliest bus object}
+    # for bus in incomingBuses:
+    #     if int(bus.departureTime) < sortedBuses[bus.busNumber].departureTime:
+    #         sortedBuses[bus.busNumber] = bus
+    # # mark all the retained buses as earliest
+    # for busNum in sortedBuses:
+    #     sortedBuses[busNum].isEarliest = True
+
+    return sortedBuses
 
 
 def estimated_time_of_arrival_and_location(trip_update, vehicle_position):
@@ -60,12 +77,13 @@ def estimated_time_of_arrival_and_location(trip_update, vehicle_position):
                 if stop.stop_id == relevantBusesWithStops[busNumber]:
                     # checking if the bus has yet to come to Ericsson
                     if int(time.time()) - int(stop.departure.time) <= 0:
-                        incomingBuses.append(incomingBus(vehicle_position, bus, stop.stop_id, stop.departure.time, busNumber,
+                        incomingBuses.append(incomingBus(vehicle_position, stop.stop_id, stop.departure.time, busNumber,
                                                          bus.trip_update.trip.trip_id))
 
 
 def getIncomingBuses():
     global incomingBuses
+    json_incomingBuses = []
     # Calling the STM API to request for bus location information and bus stop location
     feed_trip_update = gtfs_realtime_pb2.FeedMessage()
     feed_vehicle_position = gtfs_realtime_pb2.FeedMessage()
@@ -84,20 +102,21 @@ def getIncomingBuses():
     feed_vehicle_position.ParseFromString(response_vehicle_Positions.content)
 
     estimated_time_of_arrival_and_location(feed_trip_update, feed_vehicle_position)
-    earliestBuses = markEarliestBuses()
+    sortedBuses = sortIncomingBuses()
 
-    for bus in feed_vehicle_position.entity:
-        if bus.vehicle.trip.trip_id == "204983829":
-            print("{},{}".format(bus.vehicle.position.latitude, bus.vehicle.position.longitude))
+    # for bus in feed_vehicle_position.entity:
+    #     if bus.vehicle.trip.trip_id == "204983829":
+    #         print("{},{}".format(bus.vehicle.position.latitude, bus.vehicle.position.longitude))
+    #
+    # for bus in incomingBuses:
+    #     print("Bus Number: " + bus.busNumber)
+    #     print("Bus ETA: " + str(bus.ETA))
+    #     print("coordinates: {},{}".format(bus.coordinates[0], bus.coordinates[1]))
+    #     print("=================")
+    print(sortedBuses)
+    for busNumber in sortedBuses:
+        for index, bus in enumerate(sortedBuses[busNumber]):
+            sortedBuses[busNumber][index] = bus.getJsonSerialisableBus()
 
-    for bus in incomingBuses:
-        print("Bus Number: " + bus.busNumber)
-        print("Bus ETA: " + str(bus.ETA))
-        print("isEarliest?: " + str(bus.isEarliest))
-        print("coordinates: {},{}".format(bus.coordinates[0], bus.coordinates[1]))
-        print("=================")
-
-    # think about sorting the buses, both in therms of ID and ETA
-
-    return incomingBuses
+    return sortedBuses
 
