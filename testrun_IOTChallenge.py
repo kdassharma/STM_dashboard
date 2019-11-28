@@ -64,7 +64,7 @@ def sortIncomingBuses():
     return sortedBuses
 
 
-def estimated_time_of_arrival_and_location(trip_update, vehicle_position):
+def extractIncomingBuses(trip_update, vehicle_position):
     # 70 -> 55788, 177 -> 55871, 213 -> 55959
     global incomingBuses
     incomingBuses = []
@@ -101,7 +101,7 @@ def getIncomingBuses():
     feed_trip_update.ParseFromString(response_trip_update.content)
     feed_vehicle_position.ParseFromString(response_vehicle_Positions.content)
 
-    estimated_time_of_arrival_and_location(feed_trip_update, feed_vehicle_position)
+    extractIncomingBuses(feed_trip_update, feed_vehicle_position)
     sortedBuses = sortIncomingBuses()
 
     # for bus in feed_vehicle_position.entity:

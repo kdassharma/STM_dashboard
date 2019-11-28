@@ -7,14 +7,14 @@ import testrun_IOTChallenge as test
 app = Flask(__name__)
 api = Api(app)
 
-buses = []
+buses = {}
 
 
 class STMBuses(Resource):
 
     def get(self, busId):
         try:
-            return {busId: buses[busId]}, 200
+            return buses[busId], 200
         except KeyError:
             return "Bus(es) not found", 404
 
@@ -25,7 +25,7 @@ class STMBuses(Resource):
         else:
             returnCode = 200
         buses = test.getIncomingBuses()
-        return json.dumps(buses), returnCode
+        return buses, returnCode
 
 
 displayBuses = STMBuses()
