@@ -14,9 +14,9 @@ class STMBuses(Resource):
 
     def get(self, busId):
         try:
-            return buses[busId], 200
+            return {busId: buses[busId]}, 200
         except KeyError:
-            return "Bus not found", 404
+            return "Bus(es) not found", 404
 
     def put(self):
         global buses
@@ -25,7 +25,7 @@ class STMBuses(Resource):
         else:
             returnCode = 200
         buses = test.getIncomingBuses()
-        return {"incomingBuses": buses}, returnCode
+        return json.dumps(buses), returnCode
 
 
 displayBuses = STMBuses()
@@ -40,9 +40,3 @@ api.add_resource(STMBuses, "/bus/<string:busId>")
 
 app.run(debug=True)
 
-# # can put back later
-# def get(self, number):
-#     for obj in buses:
-#         if number == obj.busNumber:
-#             return bus, 200
-#     return "User not found", 404
