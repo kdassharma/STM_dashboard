@@ -1,0 +1,69 @@
+<!doctype html>
+
+<!-- https://stackoverflow.com/questions/6724515/what-is-the-purpose-of-the-html-no-js-class-->
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <title>STM Dashboard</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- https://developers.google.com/web/fundamentals/web-app-manifest-->
+  <link rel="manifest" href="site.webmanifest">
+
+  <!-- Place favicon.ico in the root directory -->
+  <link rel="apple-touch-icon" href="icon.png">
+
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/main.css">
+
+  <!-- https://stackoverflow.com/questions/32039568/what-are-the-integrity-and-crossorigin-attributes-->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link href='https://api.mapbox.com/mapbox-gl-js/v1.4.1/mapbox-gl.css' rel='stylesheet' />
+  <meta name="theme-color" content="#fafafa">
+</head>
+
+<body>
+  <div class="container-fluid">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <a class="navbar-brand" href="#">STM Dasbboard</a>
+    </nav>
+    <div class="row top-buffer">
+        <div class="col-3 col-lg-3 col-xl-3">
+            <div class="alert alert-dark" role="alert">
+            Bus 31231: 3:45pm, 4:00pm, 4:15pm
+            </div>
+            <div class="alert alert-dark" role="alert">
+                Bus 34223: 3:45pm, 4:00pm, 4:15pm
+            </div>
+            <div class="alert alert-dark" role="alert">
+                Bus 222: 3:45pm, 4:00pm, 4:15pm
+            </div>
+        </div>
+        <div class="col-9 col-lg-9 col-xl-9">
+            <div id='map'></div>
+        </div>
+    </div>
+  </div>
+
+  <!-- https://webmasters.stackexchange.com/questions/883/does-putting-javascript-at-the-bottom-defeat-the-purpose-of-document-ready-->
+  <script src="js/vendor/modernizr-3.7.1.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+  <script>window.jQuery || document.write('<script src="js/vendor/jquery-3.4.1.min.js"><\/script>')</script>
+  <script src="js/plugins.js"></script>
+  <script src="js/main.js"></script>
+  <script src='https://api.mapbox.com/mapbox-gl-js/v1.4.1/mapbox-gl.js'></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+      integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+      integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+    <!--
+        https://webmasters.stackexchange.com/questions/883/does-putting-javascript-at-the-bottom-defeat-the-purpose-of-document-ready
+        A neat tool that helped generate the map code
+    -->
+
+</body>
+</html>
