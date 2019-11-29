@@ -7,7 +7,7 @@ import time
 #import math
 
 relevantBuses = {'70': None, '177': None, '213': None}
-relevantBusesWithStops = {'70': '55959', '177': '55871', '213': '55959'}
+relevantBusesWithStops = {'70': '55959', '177': '55871', '213': '55959', '225': '55871'}
 incomingBuses = []
 
 
@@ -29,7 +29,7 @@ class incomingBus:
 
     def extractCoordinates(self, vehicle_position):
         for bus in vehicle_position.entity:
-            if self.tripId == bus.vehicle.trip.trip_id or str(int(bus.vehicle.trip.trip_id) - 1):
+            if self.tripId == bus.vehicle.trip.trip_id:
                 return [bus.vehicle.position.latitude, bus.vehicle.position.longitude]
 
 
@@ -50,16 +50,6 @@ def sortIncomingBuses():
             # the loop will never exit if you don't break, as inserting increases the length of the list
         else:
             sortedBuses.update({bus.busNumber: [bus]})
-    # # creating a dictionary which contains {busNumber: earliest time for that bus number}
-    # for busNum in relevantBuses:
-    #     sortedBuses.update({busNum: incomingBus(None, None, lowest_wait_time, None, None)})
-    # # the earliest bus objects will be put in dictionary of form {busNum: earliest bus object}
-    # for bus in incomingBuses:
-    #     if int(bus.departureTime) < sortedBuses[bus.busNumber].departureTime:
-    #         sortedBuses[bus.busNumber] = bus
-    # # mark all the retained buses as earliest
-    # for busNum in sortedBuses:
-    #     sortedBuses[busNum].isEarliest = True
 
     return sortedBuses
 
@@ -83,13 +73,11 @@ def extractIncomingBuses(trip_update, vehicle_position):
 
 def getIncomingBuses():
     global incomingBuses
-    json_incomingBuses = []
     # Calling the STM API to request for bus location information and bus stop location
     feed_trip_update = gtfs_realtime_pb2.FeedMessage()
     feed_vehicle_position = gtfs_realtime_pb2.FeedMessage()
     url_trip_updates = "https://api.stm.info/pub/od/gtfs-rt/ic/v1/tripUpdates"
     url_vehicle_position = "https://api.stm.info/pub/od/gtfs-rt/ic/v1/vehiclePositions"
-    payload = ""
 
     headers = {
         'origin': "mon.domain.xyz",
@@ -104,16 +92,6 @@ def getIncomingBuses():
     extractIncomingBuses(feed_trip_update, feed_vehicle_position)
     sortedBuses = sortIncomingBuses()
 
-    # for bus in feed_vehicle_position.entity:
-    #     if bus.vehicle.trip.trip_id == "204983829":
-    #         print("{},{}".format(bus.vehicle.position.latitude, bus.vehicle.position.longitude))
-    #
-    # for bus in incomingBuses:
-    #     print("Bus Number: " + bus.busNumber)
-    #     print("Bus ETA: " + str(bus.ETA))
-    #     print("coordinates: {},{}".format(bus.coordinates[0], bus.coordinates[1]))
-    #     print("=================")
-    print(sortedBuses)
     for busNumber in sortedBuses:
         for index, bus in enumerate(sortedBuses[busNumber]):
             sortedBuses[busNumber][index] = bus.getJsonSerialisableBus()

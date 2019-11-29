@@ -1,5 +1,3 @@
-import json
-
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
 import testrun_IOTChallenge as test
@@ -8,13 +6,17 @@ app = Flask(__name__)
 api = Api(app)
 
 buses = {}
+identifier = "busId"
 
 
 class STMBuses(Resource):
 
-    def get(self, busId):
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument(identifier)
+        args = parser.parse_args()
         try:
-            return buses[busId], 200
+            return buses[args[identifier]], 200
         except KeyError:
             return "Bus(es) not found", 404
 
@@ -36,7 +38,12 @@ def display():
     return displayBuses.put()
 
 
-api.add_resource(STMBuses, "/bus/<string:busId>")
+@app.route('/testing')
+def testing():
+    return "test"
+
+
+api.add_resource(STMBuses, "/bus/")
 
 app.run(debug=True)
 
