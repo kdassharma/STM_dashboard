@@ -1,5 +1,8 @@
+import flask
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
+import json
+
 import testrun_IOTChallenge as test
 
 app = Flask(__name__)
@@ -16,9 +19,11 @@ class STMBuses(Resource):
         parser.add_argument(identifier)
         args = parser.parse_args()
         try:
-            return buses[args[identifier]], 200
+            response = flask.make_response(buses[args[identifier]], 200)
         except KeyError:
-            return "Bus(es) not found", 404
+            response = flask.make_response(buses[args[identifier]], 404)
+        self.adjustHeaders(response)
+        return response
 
     def put(self):
         global buses
@@ -27,7 +32,13 @@ class STMBuses(Resource):
         else:
             returnCode = 200
         buses = test.getIncomingBuses()
-        return buses, returnCode
+        response = flask.make_response(json.dumps(buses), returnCode)
+        self.adjustHeaders(response)
+        return response
+
+    def adjustHeaders(self, response):
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST')
 
 
 displayBuses = STMBuses()
@@ -38,10 +49,11 @@ def display():
     return displayBuses.put()
 
 
-@app.route('/testing')
+@app.route('/testing', methods=['GET', 'PUT'])
 def testing():
-    return "test"
-
+    response = flask.jsonify({'some': 'data'})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 api.add_resource(STMBuses, "/bus/")
 
