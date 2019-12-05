@@ -1,13 +1,24 @@
 function fetchAllBuses() {
   fetch(url, {
-    method: 'GET',
+    method: 'PUT'
   })
-  .then(response => {console.log(response)});
+  .then(
+    function(response) {
+    return response.json();
+    }
+  ).then(
+    function(data) {
+    console.log(JSON.parse(data.incomingBuses[70][1]));
+    }
+  );
 }
 
-url = "http://127.0.0.1:5000/testing";
+//data.incomingBuses[X] for the corresponding array
+
+url = "http://127.0.0.1:5000/bus/";
 
 fetchAllBuses();
+
 
 // SyntaxError: await is only valid in async functions and async generators
 
