@@ -3,15 +3,11 @@ import json
 import requests
 from google.transit import gtfs_realtime_pb2
 import time
-#from datetime import datetime
-#import math
 
-relevantBuses = {'70': None, '177': None, '213': None}
-relevantBusesWithStops = {'70': '55959', '177': '55871', '213': '55959', '225': '55871'}
 incomingBuses = []
 
 
-class incomingBus:
+class IncomingBus:
     def __init__(self, vehicle_position, stopId, departureTime, busNumber, tripId):
         self.stopId = stopId
         self.departureTime = departureTime
@@ -24,10 +20,12 @@ class incomingBus:
         else:
             self.coordinates = vehicle_position
 
-    def getJsonSerialisableBus(self):
+    def getJsonSerialisedBus(self):
+        """Turns an IncomingBus object into a json string so it can be requested and parsed in JavaScript"""
         return json.dumps(self.__dict__, indent=2)
 
     def extractCoordinates(self, vehicle_position):
+        """Obtains the latitude and longitude of a bus if it exists in the vehicle_position update"""
         for bus in vehicle_position.entity:
             if self.tripId == bus.vehicle.trip.trip_id:
                 return [bus.vehicle.position.latitude, bus.vehicle.position.longitude]
@@ -35,7 +33,6 @@ class incomingBus:
 
 def sortIncomingBuses():
     # sorts all buses based on their IDs and ETAs
-    lowest_wait_time = 2147483647
     # organising buses by ID
     sortedBuses = {}
     for bus in incomingBuses:
@@ -55,7 +52,7 @@ def sortIncomingBuses():
 
 
 def extractIncomingBuses(trip_update, vehicle_position):
-    # 70 -> 55788, 177 -> 55871, 213 -> 55959
+    relevantBusesWithStops = {'70': '55959', '177': '55871', '213': '55959', '225': '55871'}
     global incomingBuses
     incomingBuses = []
 
@@ -67,11 +64,18 @@ def extractIncomingBuses(trip_update, vehicle_position):
                 if stop.stop_id == relevantBusesWithStops[busNumber]:
                     # checking if the bus has yet to come to Ericsson
                     if int(time.time()) - int(stop.departure.time) <= 0:
-                        incomingBuses.append(incomingBus(vehicle_position, stop.stop_id, stop.departure.time, busNumber,
+                        incomingBuses.append(IncomingBus(vehicle_position, stop.stop_id, stop.departure.time, busNumber,
                                                          bus.trip_update.trip.trip_id))
 
 
 def getIncomingBuses():
+    """**Contacts the STM API and processes the received data into a sorted dict of buses inbound to Ericsson**
+
+    ***This is the function that the flask app should call! This refreshes the incomingBuses dict and outputs it!***
+
+    :returns: A dict which contains all the buses headed to Ericsson, the main keys are bus numbers.The attached values are sorted lists of the buses with an identical number.
+    :rtype: dict
+    """
     global incomingBuses
     # Calling the STM API to request for bus location information and bus stop location
     feed_trip_update = gtfs_realtime_pb2.FeedMessage()
@@ -94,7 +98,7 @@ def getIncomingBuses():
 
     for busNumber in sortedBuses:
         for index, bus in enumerate(sortedBuses[busNumber]):
-            sortedBuses[busNumber][index] = bus.getJsonSerialisableBus()
+            sortedBuses[busNumber][index] = bus.getJsonSerialisedBus()
 
     return sortedBuses
 

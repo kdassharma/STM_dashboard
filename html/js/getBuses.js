@@ -8,7 +8,7 @@ function fetchAllBuses() {
     }
   ).then(
     function(data) {
-    console.log(JSON.parse(data.incomingBuses[70][1]));
+    console.log(JSON.parse(data.incomingBuses[70][0]));
     }
   );
 }

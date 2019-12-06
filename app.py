@@ -2,17 +2,19 @@ import flask
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
 import json
-
 import testrun_IOTChallenge as test
-
-app = Flask(__name__)
-api = Api(app)
-
-buses = {}
-identifier = "busId"
 
 
 def adjustHeaders(response, method):
+    """**Takes a response and adds the proper headers along with the given allowed methods.**
+
+    :param response: The generated response that needs to have additional headers.
+    :type response: flask Response object
+    :param method: The HTTP methods that are allowed to get that response
+    :type method: str
+
+    :returns: None
+    """
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Methods', method)
 
@@ -20,6 +22,20 @@ def adjustHeaders(response, method):
 class STMBuses(Resource):
 
     def get(self):
+        """**Contacts the backend to obtain the buses with a certain bus number, which it returns as a flask response.**
+
+        Takes an extra HTTP parameter that is parsed with reqparse, which represents the bus number requested.
+        The list containing all the buses with that number is obtained by contacting the backend.
+        The list is turned into a json string and given to a flask response constructor.
+        The proper headers are added to that response.
+
+        :param self: The only available bus resource
+        :type self: STMBuses
+
+        :returns: A response that contains the json string representation of the list of buses with a certain bus number
+        :rtype: flask response
+        """
+        identifier = "busId"
         parser = reqparse.RequestParser()
         parser.add_argument(identifier)
         args = parser.parse_args()
@@ -31,6 +47,18 @@ class STMBuses(Resource):
         return response
 
     def put(self):
+        """**Contacts the backend to obtain all the buses, returns them as a flask response.**
+
+        The dict containing all the buses is obtained by contacting the backend.
+        The dict is turned into a json string and given to a flask response constructor.
+        The proper headers are added to that response.
+
+        :param self: The only available bus resource
+        :type self: STMBuses
+
+        :returns: A response that contains the json string representation of the dict that contains all buses
+        :rtype: flask response
+        """
         global buses
         if len(buses) == 0:
             returnCode = 201
@@ -41,36 +69,36 @@ class STMBuses(Resource):
         adjustHeaders(response, 'PUT')
         return response
 
-    # this somehow executes instead of put, when it's called from js.
+    # this somehow executes along with put, when it's called from js.
     def options(self):
-        # global buses
+        """**Replies to the OPTIONS request that is always emitted before a PUT/POST request.**
+
+        Creates a response with valid
+        The proper headers are added to that response.
+
+        :param self: The only available bus resource
+        :type self: STMBuses
+
+        :returns: A response that contains the json string representation of the dict that contains all buses
+        :rtype: flask response
+        """
         if len(buses) == 0:
             returnCode = 201
         else:
             returnCode = 200
-        # buses = test.getIncomingBuses()
-        # response = flask.make_response(json.dumps(buses), returnCode)
         response = flask.make_response("acknowledged", returnCode)
         adjustHeaders(response, 'OPTIONS,PUT')
         return response
 
 
-displayBuses = STMBuses()
+if __name__ == "__main__":
+    app = Flask(__name__)
+    api = Api(app)
 
+    buses = {}
+    displayBuses = STMBuses()
 
-@app.route('/bus/display')
-def display():
-    return displayBuses.put()
+    api.add_resource(STMBuses, "/bus/")
 
-
-@app.route('/testing', methods=['GET', 'PUT'])
-def testing():
-    response = flask.jsonify({'some': 'data'})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
-
-
-api.add_resource(STMBuses, "/bus/")
-
-app.run(debug=True)
+    app.run(debug=True)
 
