@@ -8,13 +8,14 @@ incomingBuses = []
 
 
 class IncomingBus:
+    """Collection of useful data pro"""
     def __init__(self, vehicle_position, stopId, departureTime, busNumber, tripId):
         self.stopId = stopId
         self.departureTime = departureTime
         self.busNumber = busNumber
         self.tripId = tripId
         # self.utcETA = datetime.utcfromtimestamp(self.departureTime).strftime('%Y-%m-%d %H:%M:%S')
-        self.ETA = (self.departureTime - int(time.time())) / 60
+        self.ETA = round((self.departureTime - int(time.time())) / 60)
         if vehicle_position is not None:
             self.coordinates = self.extractCoordinates(vehicle_position)
         else:
@@ -57,6 +58,7 @@ def extractIncomingBuses(trip_update, vehicle_position):
     incomingBuses = []
 
     # Goes through all bus' stop information and finds the buses which go to requested stopID, and have yet to reach it.
+    print(trip_update.entity)
     for bus in trip_update.entity:
         for busNumber in \
                 (busNumber for busNumber in relevantBusesWithStops if bus.trip_update.trip.route_id == busNumber):
@@ -71,7 +73,7 @@ def extractIncomingBuses(trip_update, vehicle_position):
 def getIncomingBuses():
     """**Contacts the STM API and processes the received data into a sorted dict of buses inbound to Ericsson**
 
-    ***This is the function that the flask app should call! This refreshes the incomingBuses dict and outputs it!***
+    **This is the function that the flask app should call! This refreshes the incomingBuses dict and outputs it!**
 
     :returns: A dict which contains all the buses headed to Ericsson, the main keys are bus numbers.The attached values are sorted lists of the buses with an identical number.
     :rtype: dict
