@@ -2,7 +2,7 @@ import flask
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
 import json
-import testrun_IOTChallenge as test
+import backendLogic as backend
 
 
 def adjustHeaders(response, method):
@@ -64,7 +64,7 @@ class STMBuses(Resource):
             returnCode = 201
         else:
             returnCode = 200
-        buses = test.getIncomingBuses()
+        buses = backend.getIncomingBuses()
         response = flask.make_response(json.dumps({"incomingBuses": buses}), returnCode)
         adjustHeaders(response, 'PUT')
         return response

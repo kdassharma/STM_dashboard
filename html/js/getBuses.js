@@ -36,7 +36,7 @@ function fetchAllBuses() {
               console.log("innerIndex");
               console.log(innerIndex);
               console.log(busGroup[innerIndex]);
-              innerDiv += "<p>Bus arriving in: " + JSON.parse(busGroup[innerIndex]).ETA +" minutes</p>";
+              innerDiv += "<p>ETA: " + JSON.parse(busGroup[innerIndex]).ETA +" minutes</p>";
             }
             div.innerHTML = innerDiv;
           }

@@ -8,13 +8,12 @@ incomingBuses = []
 
 
 class IncomingBus:
-    """Collection of useful data pro"""
+    """Collection of useful data provided by the STM API that may be needed by the frontend"""
     def __init__(self, vehicle_position, stopId, departureTime, busNumber, tripId):
         self.stopId = stopId
         self.departureTime = departureTime
         self.busNumber = busNumber
         self.tripId = tripId
-        # self.utcETA = datetime.utcfromtimestamp(self.departureTime).strftime('%Y-%m-%d %H:%M:%S')
         self.ETA = round((self.departureTime - int(time.time())) / 60)
         if vehicle_position is not None:
             self.coordinates = self.extractCoordinates(vehicle_position)
@@ -33,8 +32,11 @@ class IncomingBus:
 
 
 def sortIncomingBuses():
-    # sorts all buses based on their IDs and ETAs
-    # organising buses by ID
+    """Puts the global var incomingBus into a sorted dict based on the buses' IDs and ETAs and returns it.
+
+    :returns: A sorted dict of buses headed to Ericsson, the main keys are bus numbers.
+    :rtype: dict
+    """
     sortedBuses = {}
     for bus in incomingBuses:
         if bus.busNumber in sortedBuses.keys():
@@ -53,25 +55,33 @@ def sortIncomingBuses():
 
 
 def extractIncomingBuses(trip_update, vehicle_position):
+    """Iterates through the STM API call result and extracts the buses that are headed to Ericsson."""
+    def identify():
+        # checking if the bus is part of the relevant list
+        for busNumber in relevantBusesWithStops:
+            if bus.trip_update.trip.route_id == busNumber:
+                for stop in bus.trip_update.stop_time_update:
+                    # checking if the bus-associated stop ID is there
+                    if stop.stop_id == relevantBusesWithStops[busNumber]:
+                        # checking if the bus has yet to come to Ericsson
+                        if int(time.time()) - int(stop.departure.time) <= 0:
+                            incomingBuses.append(IncomingBus(vehicle_position, stop.stop_id, stop.departure.time, busNumber,
+                                                             bus.trip_update.trip.trip_id))
+                            return
+
+    # Bus numbers along with the relevant bus stops IDs
     relevantBusesWithStops = {'70': '55959', '177': '55871', '213': '55959', '225': '55871'}
     global incomingBuses
     incomingBuses = []
 
     # Goes through all bus' stop information and finds the buses which go to requested stopID, and have yet to reach it.
-    print(trip_update.entity)
+    # A helper method is used to be able to break out of 2 for loops when a bus is found.
     for bus in trip_update.entity:
-        for busNumber in \
-                (busNumber for busNumber in relevantBusesWithStops if bus.trip_update.trip.route_id == busNumber):
-            for stop in bus.trip_update.stop_time_update:
-                if stop.stop_id == relevantBusesWithStops[busNumber]:
-                    # checking if the bus has yet to come to Ericsson
-                    if int(time.time()) - int(stop.departure.time) <= 0:
-                        incomingBuses.append(IncomingBus(vehicle_position, stop.stop_id, stop.departure.time, busNumber,
-                                                         bus.trip_update.trip.trip_id))
+        identify()
 
 
 def getIncomingBuses():
-    """**Contacts the STM API and processes the received data into a sorted dict of buses inbound to Ericsson**
+    """Contacts the STM API and processes the received data into a sorted dict of buses inbound to Ericsson
 
     **This is the function that the flask app should call! This refreshes the incomingBuses dict and outputs it!**
 
