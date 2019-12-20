@@ -113,4 +113,3 @@ def getIncomingBuses():
             sortedBuses[busNumber][index] = bus.getJsonSerialisedBus()
 
     return sortedBuses
-
